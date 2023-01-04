@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -33,6 +34,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import tcking.github.com.giraffeplayer2.BaseMediaController;
+import tcking.github.com.giraffeplayer2.DefaultPlayerListener;
 import tcking.github.com.giraffeplayer2.GiraffePlayer;
 import tcking.github.com.giraffeplayer2.Option;
 import tcking.github.com.giraffeplayer2.PlayerListener;
@@ -86,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 String key = binding.textInputLayout.getText().toString();
                 if (!key.equals("")) {
                     VideoInfo videoInfo = new VideoInfo(key);
+                    videoInfo.setTitle(key);
                     play(videoInfo);
                 } else {
                     Toast.makeText(MainActivity.this, "请输入播放地址在播放", Toast.LENGTH_SHORT).show();
@@ -105,18 +109,114 @@ public class MainActivity extends AppCompatActivity {
         });
         getPermissions();
 
-//        binding.videoView.s
+        binding.videoView.setPlayerListener(new PlayerListener() {
+            @Override
+            public void onPrepared(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public void onBufferingUpdate(GiraffePlayer giraffePlayer, int percent) {
+
+            }
+
+            @Override
+            public boolean onInfo(GiraffePlayer giraffePlayer, int what, int extra) {
+                return false;
+            }
+
+            @Override
+            public void onCompletion(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public void onSeekComplete(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public boolean onError(GiraffePlayer giraffePlayer, int what, int extra) {
+                Toast.makeText(MainActivity.this, "播放错误。。。", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+            @Override
+            public void onPause(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public void onRelease(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public void onStart(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public void onTargetStateChange(int oldState, int newState) {
+
+            }
+
+            @Override
+            public void onCurrentStateChange(int oldState, int newState) {
+
+            }
+
+            @Override
+            public void onDisplayModelChange(int oldModel, int newModel) {
+
+            }
+
+            @Override
+            public void onPreparing(GiraffePlayer giraffePlayer) {
+
+            }
+
+            @Override
+            public void onTimedText(GiraffePlayer giraffePlayer, IjkTimedText text) {
+
+            }
+
+            @Override
+            public void onLazyLoadProgress(GiraffePlayer giraffePlayer, int progress) {
+
+            }
+
+            @Override
+            public void onLazyLoadError(GiraffePlayer giraffePlayer, String message) {
+                Toast.makeText(MainActivity.this, "加载错误。。。", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         binding.textInputLayoutKey.setText(getKey());
-        String url = getClipContent();
-        if (!TextUtils.isEmpty(url)) {
-            binding.textInputLayout.setText(url);
-            binding.btnPlay.callOnClick();
-        }
+
+        //在所有组件绘制完成后在获取  不然获取不到
+        this.getWindow().getDecorView().post(new Runnable() {
+            @Override
+            public void run() {
+                //把获取剪切板
+                String url = getClipContent();
+                if (!TextUtils.isEmpty(url)) {
+                    if (binding.videoView.getVideoInfo() == null
+                            ||
+                            TextUtils.isEmpty(binding.videoView.getVideoInfo().getTitle())
+                            ||
+                            !binding.videoView.getVideoInfo().getTitle().equals(url)) {
+                        binding.textInputLayout.setText(url);
+                        binding.btnPlay.callOnClick();
+                    }
+                }
+            }
+        });
+
     }
 
     void saveKey(String key) {
@@ -198,8 +298,10 @@ public class MainActivity extends AppCompatActivity {
                     VideoInfo videoInfo;// = new VideoInfo(file.getUri() != null?file.getUri():file.getAbsolutePath());
                     if (file.getUri() != null) {
                         videoInfo = new VideoInfo(file.getUri());
+                        videoInfo.setTitle(file.getUri().toString());
                     } else {
                         videoInfo = new VideoInfo(file.getAbsolutePath());
+                        videoInfo.setTitle(file.getAbsolutePath());
                     }
                     play(videoInfo);
                     return;
