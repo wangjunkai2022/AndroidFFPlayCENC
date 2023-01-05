@@ -67,4 +67,7 @@ dependencies {
     api 'com.github.tcking:ijkplayer-x86:0.8.8-full' //support x86
     api 'com.github.tcking:ijkplayer-x86_64:0.8.8-full' //support x86_64
 
+    implementation ('com.github.li-xiaojun:XPopup:2.9.18'){
+        exclude group: "com.davemorrissey.labs", module: "subsampling-scale-image-view-androidx"
+    }
 }
