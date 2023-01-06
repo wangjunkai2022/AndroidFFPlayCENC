@@ -45,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 
 import tcking.github.com.giraffeplayer2.BaseMediaController;
+import tcking.github.com.giraffeplayer2.DefaultMediaController;
 import tcking.github.com.giraffeplayer2.DefaultPlayerListener;
 import tcking.github.com.giraffeplayer2.GiraffePlayer;
+import tcking.github.com.giraffeplayer2.MediaController;
 import tcking.github.com.giraffeplayer2.Option;
 import tcking.github.com.giraffeplayer2.PlayerListener;
 import tcking.github.com.giraffeplayer2.PlayerManager;
@@ -123,7 +125,10 @@ public class MainActivity extends AppCompatActivity {
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE) {
-
+            binding.videoView.getPlayer().aspectRatio(VideoInfo.AR_ASPECT_FIT_PARENT);
+        }else
+        {
+            binding.videoView.getPlayer().aspectRatio(VideoInfo.AR_ASPECT_FILL_PARENT);
         }
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 //隐藏软键盘 //
@@ -191,6 +196,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onError(GiraffePlayer giraffePlayer, int what, int extra) {
                 Toast.makeText(MainActivity.this, "播放错误。。。", Toast.LENGTH_SHORT).show();
+                record.remove(binding.videoView.getVideoInfo().getUri().toString());
+                binding.recordRv.getAdapter().notifyDataSetChanged();
                 return false;
             }
 
@@ -239,6 +246,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onLazyLoadError(GiraffePlayer giraffePlayer, String message) {
+                record.remove(binding.videoView.getVideoInfo().getUri().toString());
+                binding.recordRv.getAdapter().notifyDataSetChanged();
                 Toast.makeText(MainActivity.this, "加载错误。。。", Toast.LENGTH_SHORT).show();
             }
         });
@@ -251,6 +260,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         binding.recordRv.setAdapter(recordAdapter);
+
     }
 
     @Override
@@ -340,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "密钥长度不对 未使用解密播放", Toast.LENGTH_SHORT).show();
             }
         }
+        videoInfo.setAspectRatio(VideoInfo.AR_ASPECT_FIT_PARENT);
         binding.videoView.videoInfo(videoInfo);
         binding.videoView.getPlayer().start();
 
@@ -349,7 +360,11 @@ public class MainActivity extends AppCompatActivity {
         video.put("key", key);
         record.put(uriStr, video);
 
-        binding.recordRv.getAdapter().notifyDataSetChanged();
+        try {
+            binding.recordRv.getAdapter().notifyDataSetChanged();
+        }catch (Exception e){
+
+        }
         saveRecord();
 
         binding.textInputLayout.setText(uriStr);
@@ -377,6 +392,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
 //        saveRecord();
 }

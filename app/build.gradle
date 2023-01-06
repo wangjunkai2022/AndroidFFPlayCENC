@@ -45,6 +45,8 @@ android {
     buildFeatures {
         viewBinding true
     }
+    buildToolsVersion '33.0.0'
+    ndkVersion '25.1.8937393'
 }
 
 dependencies {
@@ -61,11 +63,14 @@ dependencies {
 
     implementation 'com.github.getActivity:XXPermissions:16.5'
 
-    implementation 'com.github.tcking:giraffeplayer2:0.1.25-full'
-    api 'com.github.tcking:ijkplayer-arm64:0.8.8-full' //support arm64
-    api 'com.github.tcking:ijkplayer-armv5:0.8.8-full' //support armv5
-    api 'com.github.tcking:ijkplayer-x86:0.8.8-full' //support x86
-    api 'com.github.tcking:ijkplayer-x86_64:0.8.8-full' //support x86_64
+
+    api project(":giraffeplayer2")
+
+//    implementation 'com.github.tcking:giraffeplayer2:0.1.25-full'
+//    api 'com.github.tcking:ijkplayer-arm64:0.8.8-full' //support arm64
+//    api 'com.github.tcking:ijkplayer-armv5:0.8.8-full' //support armv5
+//    api 'com.github.tcking:ijkplayer-x86:0.8.8-full' //support x86
+//    api 'com.github.tcking:ijkplayer-x86_64:0.8.8-full' //support x86_64
 
     implementation ('com.github.li-xiaojun:XPopup:2.9.18'){
         exclude group: "com.davemorrissey.labs", module: "subsampling-scale-image-view-androidx"
