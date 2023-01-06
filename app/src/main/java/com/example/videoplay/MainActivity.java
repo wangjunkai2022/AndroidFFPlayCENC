@@ -272,21 +272,6 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences read = getSharedPreferences("record", MODE_PRIVATE);
         //步骤2：获取文件中的值
         String value = read.getString("record", "");
-//        Map record_ = new HashMap<>();
-//        try {
-//            JSONObject jsonObject = new JSONObject(value);
-//            Iterator<String> keys = jsonObject.keys();
-//            while (keys.hasNext()) {
-//                String next = keys.next();
-//                JSONObject jsonObject2 = jsonObject.getJSONObject(next);
-//                Map map2 = new HashMap<>();
-//                map2.put("uri", jsonObject2.getString("uri"));
-//                map2.put("key", jsonObject2.getString("key"));
-//                record_.put(next, map2);
-//            }
-//        } catch (JSONException e) {
-//            Log.d("json error", e.toString());
-//        }
         List<VideoRecord> temp = new Gson().fromJson(value, new TypeToken<List<VideoRecord>>() {
         }.getType());
         for (VideoRecord video : temp) {
