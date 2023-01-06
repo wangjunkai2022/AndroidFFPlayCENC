@@ -63,6 +63,7 @@ dependencies {
 
     implementation 'com.github.getActivity:XXPermissions:16.5'
 
+    implementation 'com.google.code.gson:gson:2.10'
 
     api project(":giraffeplayer2")
 

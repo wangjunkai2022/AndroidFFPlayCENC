@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder> {
 
-    private Map localDataSet;
+    private List<VideoRecord> localDataSet;
     RecordVHListener listener;
 
     /**
@@ -41,7 +41,7 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
      * @param dataSet String[] containing the data to populate views to be used
      *                by RecyclerView.
      */
-    public RecordAdapter(Map dataSet, RecordVHListener listener) {
+    public RecordAdapter(List<VideoRecord> dataSet, RecordVHListener listener) {
         localDataSet = dataSet;
         this.listener = listener;
     }
@@ -65,10 +65,10 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
 
         String tag = "";
         int index = 0;
-        for (Object key : localDataSet.keySet()) {
+        for (VideoRecord key : localDataSet) {
             //key
             if (index == position) {
-                tag = (String) key;
+                tag = key.uri;
                 break;
             }
             index++;

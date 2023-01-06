@@ -18,9 +18,6 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 public class Controller extends DefaultMediaController {
     Context context;
 
-    private native void _setPropertyFloat(int property, float value);
-
-
     public Controller(Context context) {
         super(context);
         this.context = context;
@@ -29,8 +26,6 @@ public class Controller extends DefaultMediaController {
     @Override
     protected void initView(View view) {
         super.initView(view);
-//        com.github.tcking.giraffeplayer2.R.id.app_video_clarity
-
         $.id(com.github.tcking.giraffeplayer2.R.id.app_video_clarity).clicked(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

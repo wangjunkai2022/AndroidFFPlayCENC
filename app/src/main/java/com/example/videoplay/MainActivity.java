@@ -1,6 +1,5 @@
 package com.example.videoplay;
 
-import android.app.Application;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -13,14 +12,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
 import com.example.videoplay.databinding.ActivityMainBinding;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
@@ -30,11 +29,9 @@ import com.zlylib.fileselectorlib.FileSelector;
 import com.zlylib.fileselectorlib.bean.EssFile;
 import com.zlylib.fileselectorlib.utils.Const;
 
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,14 +41,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import tcking.github.com.giraffeplayer2.BaseMediaController;
-import tcking.github.com.giraffeplayer2.DefaultMediaController;
-import tcking.github.com.giraffeplayer2.DefaultPlayerListener;
 import tcking.github.com.giraffeplayer2.GiraffePlayer;
-import tcking.github.com.giraffeplayer2.MediaController;
 import tcking.github.com.giraffeplayer2.Option;
 import tcking.github.com.giraffeplayer2.PlayerListener;
-import tcking.github.com.giraffeplayer2.PlayerManager;
 import tcking.github.com.giraffeplayer2.VideoInfo;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkTimedText;
@@ -59,7 +51,8 @@ import tv.danmaku.ijk.media.player.IjkTimedText;
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     String defKey = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    Map<String, Map> record = new HashMap<>();
+    final List<VideoRecord> record = new ArrayList<>();
+    VideoRecord nowVideoRecord;
 
     void playClip() {
         this.getWindow().getDecorView().post(new Runnable() {
@@ -67,41 +60,29 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 //把获取剪切板
                 String url = getClipContent();
-                new XPopup.Builder(MainActivity.this)
-                        .asConfirm(
-                                "使用当前key播放剪切板内容？",
-                                String.format(
-                                        "播放的地址：%s\nkey:%s",
-                                        url,
-                                        binding.textInputLayoutKey.getText().toString()),
-                                new OnConfirmListener() {
-                                    @Override
-                                    public void onConfirm() {
-                                        if (!TextUtils.isEmpty(url)) {
-                                            if (binding.videoView.getVideoInfo() == null
-                                                    ||
-                                                    TextUtils.isEmpty(binding.videoView.getVideoInfo().getTitle())
-                                                    ||
-                                                    !binding.videoView.getVideoInfo().getTitle().equals(url)) {
-                                                binding.textInputLayout.setText(url);
-                                                binding.btnPlay.callOnClick();
-                                            }
-                                            VideoInfo videoInfo = binding.videoView.getVideoInfo();
-                                            if (videoInfo != null) {
-                                                Uri uri = videoInfo.getUri();
-                                                if (uri != null) {
-                                                    if (uri.equals(Uri.parse(url))) {
-                                                        Log.d("onResume", "和当前播放的地址是一样的 直接跳过");
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            binding.textInputLayout.setText(url);
-                                            binding.btnPlay.callOnClick();
-                                        }
+                new XPopup.Builder(MainActivity.this).asConfirm("使用当前key播放剪切板内容？", String.format("播放的地址：%s\nkey:%s", url, binding.textInputLayoutKey.getText().toString()), new OnConfirmListener() {
+                    @Override
+                    public void onConfirm() {
+                        if (!TextUtils.isEmpty(url)) {
+                            if (binding.videoView.getVideoInfo() == null || TextUtils.isEmpty(binding.videoView.getVideoInfo().getTitle()) || !binding.videoView.getVideoInfo().getTitle().equals(url)) {
+                                binding.textInputLayout.setText(url);
+                                binding.btnPlay.callOnClick();
+                            }
+                            VideoInfo videoInfo = binding.videoView.getVideoInfo();
+                            if (videoInfo != null) {
+                                Uri uri = videoInfo.getUri();
+                                if (uri != null) {
+                                    if (uri.equals(Uri.parse(url))) {
+                                        Log.d("onResume", "和当前播放的地址是一样的 直接跳过");
+                                        return;
                                     }
-                                })
-                        .show();
+                                }
+                            }
+                            binding.textInputLayout.setText(url);
+                            binding.btnPlay.callOnClick();
+                        }
+                    }
+                }).show();
             }
         });
     }
@@ -126,8 +107,7 @@ public class MainActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE) {
             binding.videoView.getPlayer().aspectRatio(VideoInfo.AR_ASPECT_FIT_PARENT);
-        }else
-        {
+        } else {
             binding.videoView.getPlayer().aspectRatio(VideoInfo.AR_ASPECT_FILL_PARENT);
         }
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -147,9 +127,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String key = binding.textInputLayout.getText().toString();
                 if (!key.equals("")) {
-                    VideoInfo videoInfo = new VideoInfo(key);
-                    videoInfo.setTitle(key);
-                    play(videoInfo);
+                    VideoRecord video = new VideoRecord();
+                    video.key = binding.textInputLayoutKey.getText().toString();
+                    video.uri = binding.textInputLayout.getText().toString();
+                    play(video);
                 } else {
                     Toast.makeText(MainActivity.this, "请输入播放地址在播放", Toast.LENGTH_SHORT).show();
                 }
@@ -159,8 +140,7 @@ public class MainActivity extends AppCompatActivity {
         binding.btnFile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                FileSelector.from(MainActivity.this)
-                        .setMaxCount(1) //设置最大选择数
+                FileSelector.from(MainActivity.this).setMaxCount(1) //设置最大选择数
                         .setFileTypes("mp4") //设置文件类型
                         .requestCode(1) //设置返回码
                         .start();
@@ -171,15 +151,20 @@ public class MainActivity extends AppCompatActivity {
         binding.videoView.setPlayerListener(new PlayerListener() {
             @Override
             public void onPrepared(GiraffePlayer giraffePlayer) {
-
+                if (nowVideoRecord.duration > 0) {
+                    giraffePlayer.seekTo(nowVideoRecord.duration);
+                }
             }
 
             @Override
             public void onBufferingUpdate(GiraffePlayer giraffePlayer, int percent) {
+//                Log.d("onBufferingUpdate", String.format("%s", percent));
+                nowVideoRecord.duration = giraffePlayer.getCurrentPosition();
             }
 
             @Override
             public boolean onInfo(GiraffePlayer giraffePlayer, int what, int extra) {
+//                Log.d("onInfo", String.format("what：%s extra：%s", what, extra));
                 return false;
             }
 
@@ -188,26 +173,30 @@ public class MainActivity extends AppCompatActivity {
                 //播放完毕
             }
 
+            //跳转指定点后调用
             @Override
             public void onSeekComplete(GiraffePlayer giraffePlayer) {
-                //预加载完毕
             }
 
             @Override
             public boolean onError(GiraffePlayer giraffePlayer, int what, int extra) {
                 Toast.makeText(MainActivity.this, "播放错误。。。", Toast.LENGTH_SHORT).show();
-                record.remove(binding.videoView.getVideoInfo().getUri().toString());
+                if (record.contains(nowVideoRecord)) {
+                    record.remove(nowVideoRecord);
+                }
                 binding.recordRv.getAdapter().notifyDataSetChanged();
                 return false;
             }
 
             @Override
             public void onPause(GiraffePlayer giraffePlayer) {
+                Log.d("onPause", String.format("%s", giraffePlayer.getDuration()));
 
             }
 
             @Override
             public void onRelease(GiraffePlayer giraffePlayer) {
+                Log.d("onRelease", String.format("%s", giraffePlayer.getDuration()));
             }
 
             @Override
@@ -216,12 +205,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTargetStateChange(int oldState, int newState) {
-
             }
 
             @Override
             public void onCurrentStateChange(int oldState, int newState) {
-
             }
 
             @Override
@@ -231,22 +218,21 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPreparing(GiraffePlayer giraffePlayer) {
-
             }
 
             @Override
             public void onTimedText(GiraffePlayer giraffePlayer, IjkTimedText text) {
-
             }
 
             @Override
             public void onLazyLoadProgress(GiraffePlayer giraffePlayer, int progress) {
-
             }
 
             @Override
             public void onLazyLoadError(GiraffePlayer giraffePlayer, String message) {
-                record.remove(binding.videoView.getVideoInfo().getUri().toString());
+                if (record.contains(nowVideoRecord)) {
+                    record.remove(nowVideoRecord);
+                }
                 binding.recordRv.getAdapter().notifyDataSetChanged();
                 Toast.makeText(MainActivity.this, "加载错误。。。", Toast.LENGTH_SHORT).show();
             }
@@ -255,8 +241,7 @@ public class MainActivity extends AppCompatActivity {
         RecordAdapter recordAdapter = new RecordAdapter(record, new RecordVHListener() {
             @Override
             public void onClick(String tag, int index) {
-                Map map = record.get(tag);
-                play(new VideoInfo(Uri.parse((String) map.get("uri"))), (String) map.get("key"));
+                play(record.get(index));
             }
         });
         binding.recordRv.setAdapter(recordAdapter);
@@ -273,10 +258,11 @@ public class MainActivity extends AppCompatActivity {
 
 
     void saveRecord() {
+        Gson gson = new Gson();
         //步骤2-1：创建一个SharedPreferences.Editor接口对象，lock表示要写入的XML文件名，MODE_WORLD_WRITEABLE写操作
         SharedPreferences.Editor editor = getSharedPreferences("record", MODE_PRIVATE).edit();
         //步骤2-2：将获取过来的值放入文件
-        editor.putString("record", new JSONObject(record).toString());
+        editor.putString("record", gson.toJson(record));
         //步骤3：提交
         editor.commit();
     }
@@ -286,19 +272,27 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences read = getSharedPreferences("record", MODE_PRIVATE);
         //步骤2：获取文件中的值
         String value = read.getString("record", "");
-        try {
-            JSONObject jsonObject = new JSONObject(value);
-            Iterator<String> keys = jsonObject.keys();
-            while (keys.hasNext()) {
-                String next = keys.next();
-                JSONObject jsonObject2 = jsonObject.getJSONObject(next);
-                Map map2 = new HashMap<>();
-                map2.put("uri", jsonObject2.getString("uri"));
-                map2.put("key", jsonObject2.getString("key"));
-                record.put(next, map2);
+//        Map record_ = new HashMap<>();
+//        try {
+//            JSONObject jsonObject = new JSONObject(value);
+//            Iterator<String> keys = jsonObject.keys();
+//            while (keys.hasNext()) {
+//                String next = keys.next();
+//                JSONObject jsonObject2 = jsonObject.getJSONObject(next);
+//                Map map2 = new HashMap<>();
+//                map2.put("uri", jsonObject2.getString("uri"));
+//                map2.put("key", jsonObject2.getString("key"));
+//                record_.put(next, map2);
+//            }
+//        } catch (JSONException e) {
+//            Log.d("json error", e.toString());
+//        }
+        List<VideoRecord> temp = new Gson().fromJson(value, new TypeToken<List<VideoRecord>>() {
+        }.getType());
+        for (VideoRecord video : temp) {
+            if (!record.contains(video)) {
+                record.add(video);
             }
-        } catch (JSONException e) {
-            Log.d("json error", e.toString());
         }
     }
 
@@ -338,11 +332,10 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    void play(VideoInfo videoInfo) {
-        play(videoInfo, binding.textInputLayoutKey.getText().toString());
-    }
 
-    void play(VideoInfo videoInfo, String key) {
+    void play(VideoRecord video) {
+        VideoInfo videoInfo = new VideoInfo(Uri.parse(video.uri));
+        String key = video.key;
         if (!TextUtils.isEmpty(key)) {
             if (key.length() == 32) {
                 videoInfo.addOption(Option.create(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "decryption_key", key));
@@ -353,23 +346,19 @@ public class MainActivity extends AppCompatActivity {
         videoInfo.setAspectRatio(VideoInfo.AR_ASPECT_FIT_PARENT);
         binding.videoView.videoInfo(videoInfo);
         binding.videoView.getPlayer().start();
-
-        Map video = new HashMap();
-        String uriStr = videoInfo.getUri().toString();
-        video.put("uri", uriStr);
-        video.put("key", key);
-        record.put(uriStr, video);
-
-        try {
-            binding.recordRv.getAdapter().notifyDataSetChanged();
-        }catch (Exception e){
-
+        if (!record.contains(video)) {
+            record.add(video);
         }
+        for (VideoRecord _video : record) {
+            if (video.equals(_video)) {
+                nowVideoRecord = _video;
+                break;
+            }
+        }
+        binding.recordRv.getAdapter().notifyDataSetChanged();
         saveRecord();
-
-        binding.textInputLayout.setText(uriStr);
+        binding.textInputLayout.setText(video.uri);
         binding.textInputLayoutKey.setText(key);
-
     }
 
     @Override
@@ -379,18 +368,23 @@ public class MainActivity extends AppCompatActivity {
             if (data != null) {
                 ArrayList<EssFile> essFileList = data.getExtras().getParcelableArrayList(Const.EXTRA_RESULT_SELECTION);
                 for (EssFile file : essFileList) {
-                    VideoInfo videoInfo;// = new VideoInfo(file.getUri() != null?file.getUri():file.getAbsolutePath());
+                    VideoRecord video = new VideoRecord();// = new VideoInfo(file.getUri() != null?file.getUri():file.getAbsolutePath());
+                    video.key = binding.textInputLayoutKey.getText().toString();
                     if (file.getUri() != null) {
-                        videoInfo = new VideoInfo(file.getUri());
+                        video.uri = file.getUri().toString();
                     } else {
-                        videoInfo = new VideoInfo(file.getAbsolutePath());
+                        video.uri = Uri.parse(file.getAbsolutePath()).toString();
                     }
-                    videoInfo.setTitle(file.getName());
-                    play(videoInfo);
+                    play(video);
                     return;
                 }
             }
         }
     }
-//        saveRecord();
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        saveRecord();
+    }
 }
