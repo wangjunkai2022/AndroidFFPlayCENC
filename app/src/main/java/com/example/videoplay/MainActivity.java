@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -17,6 +19,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.example.videoplay.databinding.ActivityMainBinding;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -53,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     String defKey = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     final List<VideoRecord> record = new ArrayList<>();
     VideoRecord nowVideoRecord;
+
+    int VideoViewHeight = 0;
 
     void playClip() {
         this.getWindow().getDecorView().post(new Runnable() {
@@ -116,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
         imm.hideSoftInputFromWindow(binding.textInputLayoutKey.getWindowToken(), 0);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,9 +133,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String key = binding.textInputLayout.getText().toString();
                 if (!key.equals("")) {
+                    String url = binding.textInputLayout.getText().toString();
                     VideoRecord video = new VideoRecord();
                     video.key = binding.textInputLayoutKey.getText().toString();
-                    video.uri = binding.textInputLayout.getText().toString();
+                    video.uri = url;
                     play(video);
                 } else {
                     Toast.makeText(MainActivity.this, "请输入播放地址在播放", Toast.LENGTH_SHORT).show();
@@ -147,13 +154,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         getPermissions();
-
         binding.videoView.setPlayerListener(new PlayerListener() {
             @Override
             public void onPrepared(GiraffePlayer giraffePlayer) {
                 if (nowVideoRecord.duration > 0) {
                     giraffePlayer.seekTo(nowVideoRecord.duration);
                 }
+                VideoViewHeight = binding.videoView.getHeight();
             }
 
             @Override
@@ -246,6 +253,29 @@ public class MainActivity extends AppCompatActivity {
         });
         binding.recordRv.setAdapter(recordAdapter);
 
+
+//        binding.windows.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                binding.videoView.getPlayer().setDisplayModel(GiraffePlayer.DISPLAY_FLOAT);
+//            }
+//        });
+
+        VideoViewHeight = binding.videoView.getHeight();
+        binding.scrollView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(View view, int i, int i1, int i2, int i3) {
+//                try {
+//                    if (binding.scrollView.getScrollY() > VideoViewHeight) {
+//                        binding.videoView.getPlayer().setDisplayModel(GiraffePlayer.DISPLAY_FLOAT);
+//                    } else {
+//                        binding.videoView.getPlayer().setDisplayModel(GiraffePlayer.DISPLAY_NORMAL);
+//                    }
+//                } catch (Exception e) {
+//                    Log.e("MainActivity", e.toString());
+//                }
+            }
+        });
     }
 
     @Override
@@ -274,9 +304,11 @@ public class MainActivity extends AppCompatActivity {
         String value = read.getString("record", "");
         List<VideoRecord> temp = new Gson().fromJson(value, new TypeToken<List<VideoRecord>>() {
         }.getType());
-        for (VideoRecord video : temp) {
-            if (!record.contains(video)) {
-                record.add(video);
+        if (temp != null && temp.size() > 0) {
+            for (VideoRecord video : temp) {
+                if (!record.contains(video)) {
+                    record.add(video);
+                }
             }
         }
     }
@@ -319,7 +351,23 @@ public class MainActivity extends AppCompatActivity {
 
 
     void play(VideoRecord video) {
+        Log.d("播放地址：", video.uri);
+
         VideoInfo videoInfo = new VideoInfo(Uri.parse(video.uri));
+        //缓存播放
+        if (binding.isChace.isChecked()) {
+            if (
+                    !video.uri.startsWith("rtmp://") //直播拉流 现在无法缓存
+                            && !video.uri.startsWith("/storage") //本地文件无需要缓存
+            ) {
+                HttpProxyCacheServer proxy = App.getProxy(MainActivity.this);
+                String proxyUrl = proxy.getProxyUrl(binding.textInputLayout.getText().toString());
+                video.uri = proxyUrl;
+            } else {
+                Toast.makeText(MainActivity.this, "url 无法缓存 已经取消缓存", Toast.LENGTH_SHORT).show();
+            }
+        }
+
         String key = video.key;
         if (!TextUtils.isEmpty(key)) {
             if (key.length() == 32) {
@@ -327,6 +375,14 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(MainActivity.this, "密钥长度不对 未使用解密播放", Toast.LENGTH_SHORT).show();
             }
+        }
+        if (binding.checkBox.isChecked()) {
+            Log.d("MainActivity", "开启反交错");
+//            videoInfo.addOption(Option.create(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "vf0", "yadif=mode=0:parity=auto:deint=0"));
+            videoInfo.addOption(Option.create(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "vf0", "yadif"));
+//            videoInfo.addOption(Option.create(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "vf0", "parity"));
+//            videoInfo.addOption(Option.create(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "vf0", "deint"));
+//            videoInfo.addOption(Option.create(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "vf0", "yadif"));
         }
         videoInfo.setAspectRatio(VideoInfo.AR_ASPECT_FIT_PARENT);
         binding.videoView.videoInfo(videoInfo);

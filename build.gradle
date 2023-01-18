@@ -3,3 +3,13 @@ plugins {
     id 'com.android.application' version '7.3.0' apply false
     id 'com.android.library' version '7.3.0' apply false
 }
+
+ext {
+    compileSdkVersion = 33
+    buildToolsVersion = "25.0.3"
+
+    targetSdkVersion = 25
+
+    versionCode = 800800
+    versionName = "0.8.8"
+}

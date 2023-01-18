@@ -4,11 +4,11 @@ plugins {
 
 android {
     namespace 'com.example.videoplay'
-    compileSdk 32
+    compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.example.videoplay"
         minSdk 21
-        targetSdk 32
+        targetSdk rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
 
@@ -45,19 +45,19 @@ android {
     buildFeatures {
         viewBinding true
     }
-    buildToolsVersion '33.0.0'
     ndkVersion '25.1.8937393'
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'com.google.android.material:material:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.navigation:navigation-fragment:2.5.3'
     implementation 'androidx.navigation:navigation-ui:2.5.3'
+    implementation project(path: ':ijkplayer-java')
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
     implementation 'com.github.ZLYang110:FileSelector:2.1.6'
 
@@ -76,4 +76,6 @@ dependencies {
     implementation ('com.github.li-xiaojun:XPopup:2.9.18'){
         exclude group: "com.davemorrissey.labs", module: "subsampling-scale-image-view-androidx"
     }
+
+    implementation "com.danikula:videocache:2.7.1"
 }

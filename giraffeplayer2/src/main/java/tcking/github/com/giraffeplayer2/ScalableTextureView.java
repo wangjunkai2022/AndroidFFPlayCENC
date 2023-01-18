@@ -42,7 +42,9 @@ public class ScalableTextureView extends TextureView implements ScalableDisplay{
 
     private void init() {
         measureHelper = new MeasureHelper(this);
+//        this.setScaleX(1);
     }
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {

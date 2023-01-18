@@ -19,3 +19,10 @@ dependencyResolutionManagement {
 rootProject.name = "VideoPlay"
 include ':app'
 include ':giraffeplayer2'
+include ':ijkplayer-java'
+include ':ijkplayer-x86_64'
+include ':ijkplayer-x86'
+include ':ijkplayer-armv5'
+include ':ijkplayer-arm64'
+include ':ijkplayer-exo'
+include ':ijkplayer-armv7a'

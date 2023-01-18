@@ -4,12 +4,12 @@ def version = "0.1.25"
 def ijkVersion = "0.8.8"
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
         buildConfigField 'boolean', 'lazyLoad', "" + ("lazyLoad" == bType)
         minSdkVersion 21
-        targetSdkVersion 32
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 29
         versionName version + (bType == "" ? "" : "-") + bType
     }
@@ -28,26 +28,24 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.appcompat:appcompat:1.6.0'
 
     api fileTree(include: ['*.jar'], dir: 'libs')
     testImplementation 'junit:junit:4.13.2'
     api 'com.github.tcking:viewquery:1.6'
-    //noinspection GradleCompatible
-//    implementation 'com.android.support:appcompat-v7:28.0.0'
-    api "com.github.tcking:ijkplayer-java:${ijkVersion}"
 
-    if ("" == bType) {
-//        "armeabi-v7a", "x86", "x86_64", "arm64-v8a"
-        api "com.github.tcking:ijkplayer-armv7a:${ijkVersion}"
-        api "com.github.tcking:ijkplayer-arm64:${ijkVersion}"
-        api "com.github.tcking:ijkplayer-x86:${ijkVersion}"
-        api "com.github.tcking:ijkplayer-x86_64:${ijkVersion}"
-    } else if ("full" == bType) {
-        api "com.github.tcking:ijkplayer-armv7a:${ijkVersion}-full"
-        api "com.github.tcking:ijkplayer-arm64:${ijkVersion}-full"
-        api "com.github.tcking:ijkplayer-x86:${ijkVersion}-full"
-        api "com.github.tcking:ijkplayer-x86_64:${ijkVersion}-full"
-    }
+    implementation project(':ijkplayer-java')
+//    implementation project(':ijkplayer-exo')
+    api project(':ijkplayer-armv5')
+    api project(':ijkplayer-armv7a')
+    api project(':ijkplayer-arm64')
+    api project(':ijkplayer-x86')
+    api project(':ijkplayer-x86_64')
+
+//    api "com.github.tcking:ijkplayer-java:${ijkVersion}"
+//    api "com.github.tcking:ijkplayer-armv7a:${ijkVersion}-full"
+//    api "com.github.tcking:ijkplayer-arm64:${ijkVersion}-full"
+//    api "com.github.tcking:ijkplayer-x86:${ijkVersion}-full"
+//    api "com.github.tcking:ijkplayer-x86_64:${ijkVersion}-full"
 }
 apply from: new File(projectDir, "gradle-on-demand.gradle")
