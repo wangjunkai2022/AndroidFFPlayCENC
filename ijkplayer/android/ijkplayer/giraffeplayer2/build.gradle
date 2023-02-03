@@ -1,0 +1,52 @@
+apply plugin: 'com.android.library'
+def bType = "full" //lazyLoad,full, blank is normal
+def version = "0.1.25"
+def ijkVersion = "0.8.8"
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        buildConfigField 'boolean', 'lazyLoad', "" + ("lazyLoad" == bType)
+        minSdkVersion rootProject.ext.minSdkVersion
+
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 29
+        versionName version + (bType == "" ? "" : "-") + bType
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildToolsVersion '33.0.0'
+    ndkVersion '25.1.8937393'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.0'
+
+    api fileTree(include: ['*.jar'], dir: 'libs')
+    testImplementation 'junit:junit:4.13.2'
+    api 'com.github.tcking:viewquery:1.6'
+
+    api project(':ijkplayer-java')
+//    implementation project(':ijkplayer-exo')
+//    api project(':ijkplayer-armv5')
+    api project(':ijkplayer-armv7a')
+    api project(':ijkplayer-arm64')
+    api project(':ijkplayer-x86')
+    api project(':ijkplayer-x86_64')
+
+//    api "com.github.tcking:ijkplayer-java:${ijkVersion}"
+//    api "com.github.tcking:ijkplayer-armv7a:${ijkVersion}-full"
+//    api "com.github.tcking:ijkplayer-arm64:${ijkVersion}-full"
+//    api "com.github.tcking:ijkplayer-x86:${ijkVersion}-full"
+//    api "com.github.tcking:ijkplayer-x86_64:${ijkVersion}-full"
+}
+apply from: new File(projectDir, "gradle-on-demand.gradle")
